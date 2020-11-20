@@ -1,0 +1,8 @@
+eslint:
+    extends:
+        - .eslint
+    script:
+        - $RUN_LINT_JS
+        - $RUN_LINT_CSS
+        # - ./node_modules/eslint/bin/eslint.js app/Resources/public/js/**
+        # - ./node_modules/eslint/bin/eslint.js app/Resources/public/js/** -o coverage/lint/report-js.junit.xml -f junit

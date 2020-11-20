@@ -1,0 +1,160 @@
+.default-retry:
+    retry:
+        max: 2
+        when:
+            - unknown_failure
+            - api_failure
+            - runner_system_failure
+
+.only-default:
+    only:
+        refs:
+            - '$CUSTOM_PROJECT_BRANCH@$CUSTOM_PROJECT_PATH'
+            - merge_requests
+
+.default-cache-vendor:
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}
+        paths:
+            - vendor/
+
+.default-cache-node_modules:
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}
+        paths:
+            - node_modules/
+
+.default-cache-sonar:
+    cache:
+        key: ${CI_COMMIT_REF_SLUG}
+        paths:
+            - opt/
+
+.before_script_php:
+    before_script:
+        - sh .gitlab/ci/scripts/create_env.sh
+        - composer install --prefer-dist --optimize-autoloader --no-ansi --no-interaction --no-progress
+
+.before_script_npm:
+    before_script:
+        - export CHROME_BIN="$(pwd)/node_modules/chromium-binary/lib/chromium/chrome-linux/chrome"
+        - npm install --silent
+        - sh .gitlab/ci/scripts/run_build.sh
+        - export NO_PROXY="localhost, 0.0.0.0/4201, 0.0.0.0/9876"
+
+.after_script_php:
+    after_script:
+        - sh .gitlab/ci/scripts/remove_env.sh
+
+.phpcs:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-vendor
+        - .before_script_php
+        - .after_script_php
+    stage: style
+
+.phpmd:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-vendor
+        - .before_script_php
+        - .after_script_php
+    stage: style
+
+.phpcpd:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-vendor
+        - .before_script_php
+        - .after_script_php
+    stage: style
+
+.phpunit:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-vendor
+        - .before_script_php
+        - .after_script_php
+    stage: tests
+    services:
+        - postgres:10.3
+    variables:
+        POSTGRES_DB: desenvolvimento
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: 'postgres'
+    artifacts:
+        paths:
+            - coverage
+    coverage: '/^\s*Lines:\s*\d+.\d+\%/'
+
+.sonar:
+    extends:
+        - .default-retry
+        - .default-cache-sonar
+    stage: scanner
+    only:
+        refs:
+            - '$CUSTOM_PROJECT_BRANCH@$CUSTOM_PROJECT_PATH'
+    dependencies:
+        - phpunit
+    variables:
+        SONAR_LOGIN: 136cdfc922680a2975352f9100407613711c720d
+        SONAR_URL: http://10.1.1.121:9000
+        SONAR_IMAGE: sonar-scanner-cli-4.0.0.1744-linux
+    before_script:
+        - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/$SONAR_IMAGE.zip
+        - mkdir -p opt
+        - unzip -o -qq $SONAR_IMAGE.zip -d opt
+        - chmod +x opt/sonar-scanner-4.0.0.1744-linux/bin/sonar-scanner
+    image: timbru31/java-node
+
+.deploy_prod:
+    extends:
+        - .default-retry
+    only:
+        refs:
+            - '$CUSTOM_PROJECT_BRANCH@$CUSTOM_PROJECT_PATH'
+    stage: deploy
+    image: docker:dind
+    when: manual
+    before_script:
+        - rm -rf opt/
+        - rm -rf coverage/
+        - docker login --username $USER_DOCKER --password $PASSWORD_DOCKER
+    script:
+        - docker build -f docker/prod/app/Dockerfile -t voxtecnologiahub/gateway_signature_app:3.0.0 --build-arg
+          APP_ENV=prod .
+        - docker push voxtecnologiahub/gateway_signature_app:latest
+        - echo "Imagem Atualizada"
+        - exit 0
+    after_script:
+        - docker logout
+
+.karma:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-node_modules
+        - .before_script_npm
+    stage: test
+    script:
+        - node_modules/@angular/cli/bin/ng test --code-coverage=true
+    artifacts:
+        paths:
+            - coverage
+    coverage: '/Statements.*?(\d+(?:\.\d+)?)%/'
+
+.eslint:
+    extends:
+        - .default-retry
+        - .only-default
+        - .default-cache-node_modules
+    image: node:12.18-alpine
+    stage: style
+    before_script:
+        - npm install

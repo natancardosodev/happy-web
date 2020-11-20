@@ -1,0 +1,5 @@
+sonar:
+  extends:
+    - .sonar
+  script:
+    - opt/sonar-scanner-4.0.0.1744-linux/bin/sonar-scanner -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN $RUN_SONAR

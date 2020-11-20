@@ -1,0 +1,31 @@
+# image: voxtecnologiahub/php-7.4-cli-alpine-vox:latest
+image: node:12.18-alpine
+
+variables:
+    APP_ENV: test
+    CUSTOM_PROJECT_PATH: skeleton-angular #projeto_path_git exemplo: vox/portal
+    CUSTOM_PROJECT_BRANCH: master #nome do branch que irá ser ser validado default: master
+    SONAR_KEY_PROJECT: skeleton-angular #key do projeto do sonar
+    RUN_PHPCPD: ./vendor/bin/phpcpd ./src --progress --min-lines=30 #comando para executar o phpcpd
+    RUN_PHPCS: ./vendor/bin/phpcs --standard=PSR12 --extensions=php --runtime-set testVersion 7.3
+        --ignore=*/tests/*,*/vendor/* ./src #comando para executar o phpcs
+    RUN_PHPMD: ./vendor/bin/phpmd ./src text .gitlab/ci/template/phpmd.xml.dist --exclude
+        Dto,Model,Entity,ValueObject,Enum.php #comando para executar o phpmd
+    RUN_PHPUNIT: ./vendor/bin/simple-phpunit --coverage-text --colors=never #comando para executar o phpunit
+    RUN_SONAR:
+        -Dsonar.projectKey=$SONAR_KEY_PROJECT -Dsonar.exclusions="**/templates/**, **/public/**, **/docker/**,
+        **/vendor/**, **/var/**, **/config/**, **/bin/**, **/app/cache/**, **/app/config/**, **/tests/**"
+        -Dsonar.php.tests=tests -Dsonar.php.tests.reportPath=./coverage/report.junit.xml
+        -Dsonar.php.coverage.reportPath=./coverage/clover.xml -Dsonar.sources=. -Dsonar.projectBaseDir=./
+    RUN_LINT_CSS: npm run stylelint
+    RUN_LINT_JS: npm run eslint
+
+include:
+    - local: '.gitlab/ci/stages.yml' #obrigatorio
+    - local: '.gitlab/ci/global.gitlab-ci.yml' #obrigatorio
+    - local: '.gitlab/ci/eslint.yml'
+    # - local: '.gitlab/ci/phpcs.yml'
+    # - local: '.gitlab/ci/phpmd.yml'
+    # - local: '.gitlab/ci/phpcpd.yml'
+    # - local: '.gitlab/ci/phpunit.yml'
+    # - local: '.gitlab/ci/sonar.yml'

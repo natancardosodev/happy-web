@@ -1,0 +1,5 @@
+karma:
+  extends:
+    - .karma
+  script:
+    - $RUN_KARMA
