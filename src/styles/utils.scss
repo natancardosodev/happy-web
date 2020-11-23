@@ -1,0 +1,14 @@
+%fullScreen {
+    width: 100vw;
+    height: 100vh;
+}
+
+%flexCenter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+%transitionBg {
+    transition: background-color 0.2s;
+}

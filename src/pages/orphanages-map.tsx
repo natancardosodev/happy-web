@@ -1,32 +1,35 @@
 import React from 'react';
 
-import { FiArrowRight } from 'react-icons/fi';
+import mapMarkerImg from '../images/map-marker.svg';
+import { Link } from 'react-router-dom';
+import { FiPlus } from 'react-icons/fi';
 
-import logoImg from '../images/logo.svg';
+import '../styles/pages/orphanages-map.scss';
 
 interface Props {
     name?: string;
 }
 
 const OrphanagesMap: React.FC<Props> = (props) => (
-    <div id="page-landing">
-        <div className="content-wrapper">
-            <img src={logoImg} alt="Happy" />
+    <div id="page-map">
+        <aside>
+            <header>
+                <img src={mapMarkerImg} alt="Map" />
 
-            <main>
-                <h1>Leve felicidade para o mundo</h1>
-                <p>Visite orfanatos e mude o dia de muitas crianças.</p>
-            </main>
-
-            <div className="location">
+                <h2>Escolha um orfanato no mapa</h2>
+                <p>Muitas crianças estão esperando a sua visita :)</p>
+            </header>
+            <footer>
                 <strong>João Pessoa</strong>
                 <span>Paraíba</span>
-            </div>
+            </footer>
+        </aside>
 
-            <a href="#" className="enter-app">
-                <FiArrowRight size={26} color="rgba(0, 0, 0, 0.6)" />
-            </a>
-        </div>
+        <div></div>
+
+        <Link to="" className="create-orphanage">
+            <FiPlus size={32} color="#FFF"></FiPlus>
+        </Link>
     </div>
 );
 
